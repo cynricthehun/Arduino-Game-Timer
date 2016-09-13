@@ -1,0 +1,188 @@
+/*Airsoft Timer
+@Authors: Chase Cooley, Joey Meyer
+@Version 1.1
+*/
+
+#include <Keypad.h>
+#include <LiquidCrystal.h>
+#include <Tone.h>
+#define pound 14
+Tone tone1;int Scount = 0; // count seconds
+int Mcount = 0; // count minutes
+int Hcount =0; // count hours
+int Dcount = 0; // count days
+int val = 0;
+long secMillis = 0; // store last time for second add
+long interval = 1000; // interval for seconds
+char password[4];
+int currentLength = 0;
+int i = 0;
+char entered[4];
+int ledPin = 3; //red light
+int ledPin2 = 4; //green light
+
+LiquidCrystal lcd(7,8,10,11,12,13);
+const byte ROWS = 4; //four rows
+const byte COLS = 3; //three columns
+char keys[ROWS][COLS] = {
+  {'1','2','3'},{'4','5','6'},
+  {'7','8','9'},{'*','0','#'}
+};
+byte rowPins[ROWS] = {18, 2, 14, 16}; //connect to the row pinouts of the keypadbyte
+colPins[COLS] = {17, 19, 15}; //connect to the column pinouts of the keypad
+
+Keypad keypad = Keypad( makeKeymap(keys), rowPins, colPins, ROWS, COLS );
+void setup(){
+  pinMode(ledPin, OUTPUT); // sets the digital pin as
+  outputpinMode(ledPin2, OUTPUT); // sets the digital pin as output
+  tone1.begin(9);
+  lcd.begin(16, 2);
+  Serial.begin(9600);
+  lcd.clear();
+  lcd.setCursor(0,0);
+  lcd.print("Enter Code: ");
+  while (currentLength < 4){
+    lcd.setCursor(currentLength + 6, 1);
+    lcd.cursor();
+    char key = keypad.getKey();
+    key == NO_KEY;
+    if (key != NO_KEY){
+      lcd.print(key);
+      password[currentLength] = key;
+      currentLength++;
+      delay(200);
+    }
+  }
+  if (currentLength == 4){
+    lcd.noCursor();
+    lcd.clear();
+    lcd.home();
+    lcd.print("You've Entered: ");
+    lcd.setCursor(6,1);
+    lcd.print(password[0]);
+    lcd.print(password[1]);
+    lcd.print(password[2]);
+    lcd.print(password[3]);
+    delay(3000);
+    lcd.clear();
+    currentLength = 0;
+  }
+}
+
+void loop(){
+  char key2 = keypad.getKey(); // get the keylcd.setCursor(0,0);
+  timer();
+  if (key2 != NO_KEY){
+  while (key2 == NO_KEY){
+    key2 = keypad.getKey();
+  }
+  if (key2 != NO_KEY){
+    lcd.clear();
+    lcd.setCursor(0,0);
+    lcd.print("Enter Code: ");
+    while (currentLength < 4){
+      lcd.setCursor(currentLength + 6, 1);
+      lcd.cursor();
+      char key2 = keypad.getKey();
+      if (key2 != NO_KEY){
+          lcd.print(key2);
+          entered[currentLength] = key2;currentLength++;
+          delay(200);
+          lcd.noCursor();
+          lcd.setCursor(currentLength + 5, 1);
+          lcd.print("*");
+          lcd.setCursor(currentLength + 6, 1);
+          lcd.cursor();
+      }
+    }
+    if (currentLength == 4){
+        if (entered[0] == password[0] && entered[1] == password[1] && entered[2] == password[2] && entered[3] == password[3]){
+          lcd.noCursor();lcd.clear();
+          lcd.home();lcd.print(" Defused ");
+          currentLength = 0;delay(2500);
+          lcd.setCursor(0,1);lcd.print("Reset the Bomb");
+        }
+        else{
+          lcd.noCursor();
+          lcd.clear();lcd.home();
+          lcd.print(" Wrong ");lcd.setCursor(0,1);
+          lcd.print(" Add - 1:30 ");
+          if (Mcount < 14){
+            Mcount = Mcount + 1;
+          }
+          if (Scount < 59){
+            Scount = Scount + 30;
+          }
+          delay(1500);
+          currentLength = 0;
+        }
+      }
+    }
+  }
+}
+
+void timer(){
+  if ( Mcount >= 15 ){
+    while ( Mcount >= 15){
+      lcd.noCursor();
+      lcd.clear();
+      lcd.home();
+      lcd.print(" !BoOm! ");
+      tone1.play(NOTE_A2, 200);digitalWrite(ledPin, HIGH); // sets the LED on
+      tone1.play(NOTE_A2, 200);delay(10); // waits for a second
+      digitalWrite(ledPin, LOW); // sets the LED
+      offtone1.play(NOTE_A2, 200);
+      delay(10); // waits for a second
+      digitalWrite(ledPin2, HIGH); // sets the LED on
+      tone1.play(NOTE_A2, 200);delay(10); // waits for a second
+      digitalWrite(ledPin2, LOW); // sets the LED
+      offtone1.play(NOTE_A2, 200);
+      delay(10); // waits for a second
+      char key4 = keypad.getKey();
+      if (key4 != NO_KEY){
+        while (key4 == NO_KEY){
+          key4 = keypad.getKey();
+        }
+        if (key4 = '#'){
+          lcd.clear();lcd.print("Reset the Bomb");
+        }
+      }
+    }
+    if ( Mcount == 60){ // if Mcount is 60 do this operation
+      //delay (32); // good place to fine tune timing
+      Mcount = 0; // reset Mcount
+      Hcount ++;
+    }
+    if (Hcount> 23){
+      Dcount++;
+      Hcount = 0; // have to reset Hcount to "0" after 24hrs
+    }
+    lcd.setCursor (0,1); // sets cursor to 2nd line
+    lcd.print ("Timer: ");
+    lcd.print (Dcount);lcd.print (":");
+    lcd.print (Hcount);lcd.print (":");
+    lcd.print (Mcount);lcd.print (":");
+    lcd.print (Scount);
+    if (Scount >59){ // if 60 do this operation
+      Mcount ++; // add 1 to Mcount
+      Scount = 0;
+      //reset Scount
+      //delay (58);
+      //changes ms per min
+    }
+    if (Scount < 60){ // do this oper. 59 times
+      unsigned long currentMillis = millis();
+      //delay (988);
+      // changing by one = 60 ms a min
+      if(currentMillis - secMillis > interval){
+        tone1.play(NOTE_G5, 200);
+        secMillis = currentMillis;
+        Scount ++; // add 1 to Scount
+        digitalWrite(ledPin2, HIGH); // sets the LED on
+        delay(10); // waits for a second
+        digitalWrite(ledPin2, LOW); // sets the LED off
+        delay(10); // waits for a second
+      }
+    }
+  }
+}
